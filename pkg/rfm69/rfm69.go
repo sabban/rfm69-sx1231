@@ -156,7 +156,7 @@ func (d *Device) Receive() ([]byte, error) {
 	d.csPin.Low()
 	d.spi.Transfer(REG_FIFO & 0x7F)
 	for i := 0; i < fifoSize; i++ {
-		buf[i] = d.spi.Transfer(0x00)
+		buf[i], _ = d.spi.Transfer(0x00)
 	}
 	d.csPin.High()
 
