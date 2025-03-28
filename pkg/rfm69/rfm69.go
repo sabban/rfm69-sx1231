@@ -64,7 +64,7 @@ func (d *Device) readReg(reg byte) byte {
 	d.csPin.Low()
 	// Clear the MSB for reading.
 	d.spi.Transfer(reg & 0x7F)
-	val := d.spi.Transfer(0x00)
+	val, _ := d.spi.Transfer(0x00)
 	d.csPin.High()
 	return val
 }
