@@ -3,7 +3,6 @@ package rfm69
 
 import (
 	"errors"
-	"fmt"
 	"machine"
 	"time"
 
@@ -25,7 +24,7 @@ const (
 	SPI_BUFFER_SIZE     = 256
 	RADIOEVENTCHAN_SIZE = 1
 
-	timeout = 100 * time.Millisecond
+	timeout = 10000 * time.Millisecond
 )
 
 // Expected chip revision value (adjust if needed)
@@ -44,9 +43,10 @@ type Device struct {
 	spiRxBuf   []byte          // global Rx buffer to avoid heap allocations in interrupt
 }
 
-func New(spi drivers.SPI) *Device {
+func New(spi drivers.SPI, resetPin machine.Pin) *Device {
 	return &Device{
 		spi:            spi,
+		rstPin:         resetPin,
 		radioEventChan: make(chan uint8, RADIOEVENTCHAN_SIZE),
 		spiTxBuf:       make([]byte, SPI_BUFFER_SIZE),
 		spiRxBuf:       make([]byte, SPI_BUFFER_SIZE),
@@ -79,6 +79,7 @@ func (d *Device) IsReady() error {
 		time.Sleep(1 * time.Millisecond)
 	}
 }
+
 func (d *Device) ReadRegister(address byte) (byte, error) {
 	ret, err := d.spi.Transfer(address & 0x7F)
 	if err != nil {

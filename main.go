@@ -9,6 +9,7 @@ import (
 
 func main() {
 	// Configure SPI
+	time.Sleep(3 * time.Second)
 	spi := machine.SPI0
 	spi.Configure(machine.SPIConfig{
 		Frequency: 8e6,
@@ -18,25 +19,28 @@ func main() {
 	})
 
 	// Define control pins (adjust to your board)
-	csPin := machine.D10   // Chip select
-	resetPin := machine.D9 // Reset pin
+	csPin := machine.Pin(16)  // Chip select
+	rstPin := machine.Pin(17) // Reset pin
+	io0Pin := machine.Pin(21) // Interrupt pin
+
+	radioControl := rfm69.NewRadioControl(csPin, io0Pin)
+	radioControl.Init()
 
 	// Create a new radio instance
-	radio := rfm69.New(spi, csPin, resetPin)
+	radio := rfm69.New(spi, rstPin)
 
-	// Initialize the radio (includes chip revision check)
-	if err := radio.Init(); err != nil {
-		println("Failed to initialize radio:", err.Error())
-		// Optionally, halt execution
-		for {
-			time.Sleep(time.Second)
-		}
+	radio.Reset()
+
+	err := radio.IsReady()
+	if err != nil {
+		println("Radio is not ready: ", err)
 	}
-
-	// Set frequency to 915 MHz (adjust if needed)
-	radio.SetFrequency(915000000)
-
+	// Initialize the radio (includes chip revision check)
 	println("Radio initialized successfully!")
+
+	if radio.DetectDevice() {
+		println("Device detected!")
+	}
 
 	// Main loop: add further functionality such as sending or receiving data
 	for {
