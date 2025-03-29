@@ -62,7 +62,7 @@ func (d *Device) Reset() {
 
 // WaitForChipReady polls the IRQ Flags register (RegIrqFlags1)
 // until the ModeReady flag (bit 7) is set, indicating the chip is ready.
-func (d *Device) isReady() error {
+func (d *Device) IsReady() error {
 	start := time.Now()
 
 	for {
