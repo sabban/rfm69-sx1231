@@ -16,7 +16,6 @@ func NewRadioControl(csPin, dio0Pin machine.Pin) *RadioControl {
 	}
 }
 
-// SetNss sets the NSS line aka chip select for SPI.
 func (rc *RadioControl) SetCs(state bool) error {
 	rc.csPin.Set(state)
 	return nil
@@ -25,6 +24,7 @@ func (rc *RadioControl) SetCs(state bool) error {
 // Init() configures whatever needed for sx127x radio control
 func (rc *RadioControl) Init() error {
 	rc.csPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	rc.rstPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	rc.dio0Pin.Configure(machine.PinConfig{Mode: machine.PinInputPulldown})
 	return nil
 }

@@ -43,13 +43,14 @@ type Device struct {
 	spiRxBuf   []byte          // global Rx buffer to avoid heap allocations in interrupt
 }
 
-func New(spi drivers.SPI, resetPin machine.Pin) *Device {
+func New(spi drivers.SPI, resetPin machine.Pin, radio RadioController) *Device {
 	return &Device{
 		spi:            spi,
 		rstPin:         resetPin,
 		radioEventChan: make(chan uint8, RADIOEVENTCHAN_SIZE),
 		spiTxBuf:       make([]byte, SPI_BUFFER_SIZE),
 		spiRxBuf:       make([]byte, SPI_BUFFER_SIZE),
+		controller:     radio,
 	}
 }
 
@@ -60,11 +61,18 @@ func (d *Device) Reset() {
 	time.Sleep(100 * time.Millisecond)
 }
 
+func (d *Device) SetStandbyMode() error {
+	// Set to standby mode
+	if err := d.WriteRegister(REG_OP_MODE, MODE_STDBY); err != nil {
+		return errors.New("failed to set standby mode")
+	}
+	return nil
+}
+
 // WaitForChipReady polls the IRQ Flags register (RegIrqFlags1)
 // until the ModeReady flag (bit 7) is set, indicating the chip is ready.
 func (d *Device) IsReady() error {
 	start := time.Now()
-
 	for {
 		value, err := d.ReadRegister(REG_IRQ_FLAGS1)
 		if err != nil {
@@ -81,6 +89,8 @@ func (d *Device) IsReady() error {
 }
 
 func (d *Device) ReadRegister(address byte) (byte, error) {
+	d.controller.SetCs(false)
+	defer d.controller.SetCs(true)
 	ret, err := d.spi.Transfer(address & 0x7F)
 	if err != nil {
 		return 0, err
@@ -94,4 +104,18 @@ func (d *Device) DetectDevice() bool {
 		return false
 	}
 	return true
+}
+
+func (d *Device) WriteRegister(addr, value byte) error {
+	d.controller.SetCs(false)
+	defer d.controller.SetCs(true)
+	_, err := d.spi.Transfer(addr | 0x80)
+	if err != nil {
+		return err
+	}
+	_, err = d.spi.Transfer(value)
+	if err != nil {
+		return err
+	}
+	return nil
 }

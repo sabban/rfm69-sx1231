@@ -27,16 +27,22 @@ func main() {
 	radioControl.Init()
 
 	// Create a new radio instance
-	radio := rfm69.New(spi, rstPin)
+	radio := rfm69.New(spi, rstPin, radioControl)
 
 	radio.Reset()
 
-	err := radio.IsReady()
+	err := radio.SetStandbyMode()
+	if err != nil {
+		println("Failed to set standby mode: ", err)
+	}
+
+	err = radio.IsReady()
 	if err != nil {
 		println("Radio is not ready: ", err)
+
+	} else {
+		println("Radio initialized successfully!")
 	}
-	// Initialize the radio (includes chip revision check)
-	println("Radio initialized successfully!")
 
 	if radio.DetectDevice() {
 		println("Device detected!")
